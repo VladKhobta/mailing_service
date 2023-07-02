@@ -2,7 +2,7 @@ import uvicorn
 
 from fastapi import FastAPI, APIRouter
 
-from sch import scheduler
+from services.scheduling import scheduler
 
 from api import mailing_router, recipient_router
 

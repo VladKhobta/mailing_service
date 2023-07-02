@@ -1,3 +1,4 @@
+import datetime
 from uuid import UUID
 from logging import getLogger
 import logging
@@ -10,10 +11,12 @@ from sqlalchemy.exc import IntegrityError
 
 from schemas.mailings import (
     ShowMailing,
-    MailingCreate
+    MailingCreate,
+    MailingsStats,
+    MailingStats,
+    MailingDeleteResponse
 )
-from services.mailings import MailingService
-
+from services import MailingService, MessageService
 
 logger = getLogger(__name__)
 
@@ -22,11 +25,15 @@ mailing_router = APIRouter()
 
 @mailing_router.post("/")
 async def create_mailing(
-    body: MailingCreate,
-    mailing_service: MailingService = Depends()
+        body: MailingCreate,
+        mailing_service: MailingService = Depends(),
 ) -> ShowMailing:
     try:
-        return await mailing_service.create(body)
+        # return await MessageService().send_message(999, datetime.datetime.now())
+        mailing = await mailing_service.create(
+            body
+        )
+        return mailing
     except IntegrityError as err:
         logger.error(err)
         raise HTTPException(
@@ -35,8 +42,39 @@ async def create_mailing(
         )
 
 
-@mailing_router.get("/")
-async def get_mailings(
-    mailing_service: MailingService = Depends()
-):
-    return await mailing_service.get_mailings()
+@mailing_router.get("/stats")
+async def get_mailings_stats(
+        mailing_service: MailingService = Depends()
+) -> MailingsStats:
+    return await mailing_service.get_mailings_stats()
+
+
+@mailing_router.get("/detailed_stats")
+async def get_mailing_stat(
+        mailing_id: UUID,
+        mailing_service: MailingService = Depends()
+) -> MailingStats:
+
+    mailing_stats = await mailing_service.get_mailing_stats(mailing_id)
+    if not mailing_stats:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Mailing with {mailing_id} id is not found"
+        )
+    return mailing_stats
+
+
+@mailing_router.delete("/")
+async def delete_mailing(
+        mailing_id: UUID,
+        mailing_service: MailingService = Depends()
+) -> MailingDeleteResponse:
+    deleted_mailing_id = await mailing_service.delete(mailing_id)
+    if not deleted_mailing_id:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Mailing with {mailing_id} is not found"
+        )
+    return MailingDeleteResponse(
+        deleted_mailing_id=deleted_mailing_id
+    )

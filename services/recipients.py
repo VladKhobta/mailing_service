@@ -31,18 +31,16 @@ class RecipientService:
 
     async def create(
             self,
-            phone_number: str,
-            time_zone: str,
-            tag: str,
+            body: RecipientCreate
     ) -> ShowRecipient:
         async with self.session.begin():
             recipient_dal = RecipientDAL(self.session)
-            mobile_code = phone_number[1:4]
+            mobile_code = body.phone_number[1:4]
             recipient = await recipient_dal.create(
-                phone_number=phone_number,
+                phone_number=body.phone_number,
                 mobile_code=mobile_code,
-                time_zone=time_zone,
-                tag=tag
+                time_zone=body.time_zone,
+                tag=body.tag
             )
             return ShowRecipient(
                 recipient_id=recipient.recipient_id,

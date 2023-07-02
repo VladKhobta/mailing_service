@@ -20,16 +20,16 @@ class ShowMailing(TunedModel):
     start_datetime: datetime
     end_datetime: datetime
     content: str
-    tag_filter: Optional[str]
-    mobile_code_filter: Optional[str]
+    tag_filter: Optional[str] = None
+    mobile_code_filter: Optional[str] = None
 
 
 class MailingCreate(BaseModel):
     start_datetime: datetime
     end_datetime: datetime
     content: str
-    tag_filter: Optional[str]
-    mobile_code_filter: Optional[str]
+    tag_filter: Optional[str] = None
+    mobile_code_filter: Optional[str] = None
 
     @root_validator
     def validate_filters(cls, values):
@@ -48,3 +48,25 @@ class MailingCreate(BaseModel):
                 detail=f'Start datetime cannot be greater than end datetime'
             )
         return values
+
+
+class MailingsStats(TunedModel):
+    mailings_count: int
+    messages_count: int
+    pending_messages: int
+    failed_messages: int
+    sent_messages: int
+
+
+class MailingStats(TunedModel):
+    mailing_id: UUID
+    content: str
+    recipients_count: int
+    messages_count: int
+    pending_messages: int
+    failed_messages: int
+    sent_messages: int
+
+
+class MailingDeleteResponse(TunedModel):
+    deleted_mailing_id: UUID

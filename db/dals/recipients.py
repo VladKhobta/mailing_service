@@ -23,6 +23,23 @@ class RecipientDAL:
         if recipient_row is not None:
             return recipient_row[0]
 
+    async def get_by_filters(
+            self,
+            tag_filter: str,
+            mobile_code_filter: str
+    ):
+        query = select(Recipient)
+
+        if tag_filter:
+            query = query.filter(Recipient.tag == tag_filter)
+        if mobile_code_filter:
+            query = query.filter(Recipient.mobile_code == mobile_code_filter)
+
+        res = await self.session.execute(query)
+
+        return res.scalars().all()
+
+
     async def create(
             self,
             phone_number: str,
@@ -51,7 +68,7 @@ class RecipientDAL:
         )
         res = await self.session.execute(query)
         deleted_recipient_row = res.fetchone()
-        if deleted_recipient_row is not None:
+        if deleted_recipient_row:
             return deleted_recipient_row[0]
 
     async def update(
@@ -67,5 +84,5 @@ class RecipientDAL:
         )
         res = await self.session.execute(query)
         updated_recipient_row = res.fetchone()
-        if updated_recipient_row is not None:
+        if updated_recipient_row:
             return updated_recipient_row[0]

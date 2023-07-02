@@ -27,11 +27,7 @@ async def create_recipient(
         recipient_service: RecipientService = Depends()
 ) -> ShowRecipient:
     try:
-        return await recipient_service.create(
-            phone_number=body.phone_number,
-            time_zone=body.time_zone,
-            tag=body.tag
-        )
+        return await recipient_service.create(body=body)
     except IntegrityError as err:
         logger.error(err)
         raise HTTPException(
