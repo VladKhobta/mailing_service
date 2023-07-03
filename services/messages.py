@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.session import get_db
 from db.dals import MessageDAL
+from settings import TOKEN
 
 
 class MessageService:
@@ -43,7 +44,7 @@ class MessageService:
         if now < end_datetime:
             async with httpx.AsyncClient() as client:
                 headers = {
-                    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTg3MjE2NzIsImlzcyI6ImZhYnJpcXVlIiwibmFtZSI6Imh0dHBzOi8vdC5tZS9wdXBzc3Nzc3NzIn0.1nj34EfEwLKj1s5jc5mA9nUpSjCj4NDvMbxs1IWx3CU"
+                    "Authorization": TOKEN
                 }
                 response = await client.post(
                     f"https://probe.fbrq.cloud/v1/send/{int(message_id)}",
@@ -57,7 +58,7 @@ class MessageService:
                 if response.status_code == 200:
                     status = "SENT"
 
-        print("SENT MESSAGE")
+        print("MESSAGE IS SENT")
 
         return await self.update_message(
             message_id=message_id,

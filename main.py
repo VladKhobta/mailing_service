@@ -2,26 +2,42 @@ import uvicorn
 
 from fastapi import FastAPI, APIRouter
 
+from starlette_exporter import handle_metrics, PrometheusMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+
 from services.scheduling import scheduler
-
 from api import mailing_router, recipient_router
-
 import settings
 
 
-app = FastAPI(title='Mailing Service')
+tags_metadata = [
+    {
+        "name": "recipients",
+        "description": "Operations with mailing recipients"
+    },
+    {
+        "name": "mailings",
+        "description": "Operations with mailings"
+    }
+]
+
+app = FastAPI(
+    title='Mailing Service',
+    openapi_tags=tags_metadata
+)
+Instrumentator().instrument(app).expose(app)
 
 main_api_router = APIRouter()
 
 main_api_router.include_router(
     recipient_router,
-    prefix='/recipient',
-    tags=['recipient']
+    prefix='/recipients',
+    tags=['recipients']
 )
 main_api_router.include_router(
     mailing_router,
-    prefix='/mailing',
-    tags=['mailing']
+    prefix='/mailings',
+    tags=['mailings']
 )
 
 app.include_router(main_api_router)
