@@ -36,6 +36,16 @@ class MessageDAL:
         await self.session.flush()
         return message
 
+    async def get_by_id(
+            self,
+            message_id: int
+    ) -> Union[Message, None]:
+        query = select(Message).where(Message.message_id == message_id)
+        res = await self.session.execute(query)
+        message_row = res.fetchone()
+        if message_row:
+            return message_row[0]
+
     async def delete_related_to_mailing(
             self,
             mailing_id: UUID
@@ -70,13 +80,23 @@ class MessageDAL:
             return updated_message_row[0]
 
     async def get_status_count(self, status: MessageStatus):
-        status_counts = await self.session.execute(
+        status_count = await self.session.execute(
             select(func.count())
             .where(Message.status == status)
         )
-        print(status_counts)
-        return status_counts.scalar()
+        return status_count.scalar()
 
+    async def get_status_count_detailed(
+            self,
+            status: MessageStatus,
+            mailing_id: UUID
+    ):
+        status_count = await self.session.execute(
+            select(func.count())
+            .where(Message.mailing_id == mailing_id)
+            .where(Message.status == status)
+        )
+        return status_count.scalar()
 
     async def get_messages_ids(
             self,

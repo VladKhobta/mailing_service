@@ -1,7 +1,7 @@
 FROM python:3.8-alpine3.12
 
 #
-WORKDIR .
+WORKDIR ./app
 COPY . .
 
 ENV PYTHONDONTWRITEBYTECODE 1

@@ -48,6 +48,7 @@ class MailingService:
                 mailing.mobile_code_filter
             )
 
+            print(recipients)
         if recipients:
             await self.schedule_mailing(
                 mailing,
@@ -62,6 +63,39 @@ class MailingService:
             tag_filter=mailing.tag_filter,
             mobile_code_filter=mailing.mobile_code_filter
         )
+
+    # updating messages records and jobs of scheduler
+    async def update(
+            self,
+            mailing_id: UUID,
+            updated_mailing_data: dict
+    ) -> Union[UUID, None]:
+        async with self.session.begin():
+            mailing_dal = MailingDAL(self.session)
+            updated_mailing_id = await mailing_dal.update(
+                mailing_id=mailing_id,
+                **updated_mailing_data
+            )
+
+            mailing = await mailing_dal.get_mailing_by_id(updated_mailing_id)
+
+            message_dal = MessageDAL(self.session)
+            recipient_dal = RecipientDAL(self.session)
+
+            message_ids = await message_dal.get_messages_ids(mailing_id)
+            print(scheduler.print_jobs())
+            for message_id in message_ids:
+                message = await message_dal.get_by_id(message_id)
+                recipient = await recipient_dal.get_by_id(message.recipient_id)
+                scheduler.remove_job(str(message_id))
+
+                await self.schedule_message(
+                    mailing=mailing,
+                    recipient=recipient
+                )
+            print(scheduler.print_jobs())
+
+            return updated_mailing_id
 
     async def delete(
             self,
@@ -80,6 +114,16 @@ class MailingService:
             return deleted_mailing_id
 
 
+    async def get_by_id(
+            self,
+            mailing_id: UUID
+    ):
+        async with self.session.begin():
+            mailing_dal = MailingDAL(self.session)
+            mailing = await mailing_dal.get_mailing_by_id(
+                mailing_id=mailing_id
+            )
+            return mailing
 
     async def get_mailings_stats(self) -> MailingsStats:
         async with self.session.begin():
@@ -110,21 +154,42 @@ class MailingService:
                 mailing_id=mailing_id
             )
 
-        if not mailing:
-            return None
+            if not mailing:
+                return None
+
+            recipient_dal = RecipientDAL(self.session)
+            recipient_count = await recipient_dal.get_recipient_count(mailing_id)
+
+            message_dal = MessageDAL(self.session)
+            pending_messages_count = await message_dal.get_status_count_detailed(
+                MessageStatus.PENDING,
+                mailing_id
+            )
+            failed_messages_count = await message_dal.get_status_count_detailed(
+                MessageStatus.FAILED,
+                mailing_id
+            )
+            sent_messages_count = await message_dal.get_status_count_detailed(
+                MessageStatus.SENT,
+                mailing_id
+            )
+
 
         return MailingStats(
             mailing_id=mailing_id,
+            start_datetime=mailing.start_datetime,
+            end_datetime=mailing.end_datetime,
             content=mailing.content,
             tag_filter=mailing.tag_filter,
             mobile_code_filter=mailing.mobile_code_filter,
-            recipients_count=0,
-            messages_count=0,
-            pending_messages=0,
-            failed_messages=0,
-            sent_messages=0
+            recipients_count=recipient_count,
+            messages_count=pending_messages_count + failed_messages_count + sent_messages_count,
+            pending_messages=pending_messages_count,
+            failed_messages=failed_messages_count,
+            sent_messages=sent_messages_count
         )
 
+    # managing mailing scheduling (creating messages in PENDING/FAILED status
     async def schedule_mailing(
             self,
             mailing: Mailing,

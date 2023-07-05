@@ -42,11 +42,11 @@ class RecipientCreate(BaseModel):
         return value
 
 
-class RecipientDeleteResponse(BaseModel):
+class RecipientDeleteResponse(TunedModel):
     deleted_recipient_id: UUID
 
 
-class RecipientUpdateResponse(BaseModel):
+class RecipientUpdateResponse(TunedModel):
     updated_recipient_id: UUID
 
 

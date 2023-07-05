@@ -2,7 +2,6 @@ import uvicorn
 
 from fastapi import FastAPI, APIRouter
 
-from starlette_exporter import handle_metrics, PrometheusMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from services.scheduling import scheduler

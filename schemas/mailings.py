@@ -61,6 +61,10 @@ class MailingsStats(TunedModel):
 class MailingStats(TunedModel):
     mailing_id: UUID
     content: str
+    start_datetime: datetime
+    end_datetime: datetime
+    tag_filter: Optional[str]
+    mobile_code_filter: Optional[str]
     recipients_count: int
     messages_count: int
     pending_messages: int
@@ -70,3 +74,13 @@ class MailingStats(TunedModel):
 
 class MailingDeleteResponse(TunedModel):
     deleted_mailing_id: UUID
+
+
+class MailingUpdateResponse(TunedModel):
+    updated_mailing_id: UUID
+
+
+class MailingUpdate(BaseModel):
+    start_datetime: Optional[datetime]
+    end_datetime: Optional[datetime]
+    content: Optional[str]

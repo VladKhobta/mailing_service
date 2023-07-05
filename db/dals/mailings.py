@@ -36,6 +36,22 @@ class MailingDAL:
         await self.session.flush()
         return new_mailing
 
+    async def update(
+            self,
+            mailing_id: UUID,
+            **kwargs
+    ) -> Union[UUID, None]:
+        query = (
+            update(Mailing)
+            .where(Mailing.mailing_id == mailing_id)
+            .values(kwargs)
+            .returning(Mailing.mailing_id)
+        )
+        res = await self.session.execute(query)
+        updated_mailing_row = res.fetchone()
+        if updated_mailing_row:
+            return updated_mailing_row[0]
+
     async def delete(
             self,
             mailing_id: UUID

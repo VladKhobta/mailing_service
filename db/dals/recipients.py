@@ -3,9 +3,9 @@ from typing import Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, update
-from sqlalchemy import select
+from sqlalchemy import select, func
 
-from db.models.recipients import Recipient
+from db.models import Recipient, Message
 
 
 class RecipientDAL:
@@ -30,14 +30,27 @@ class RecipientDAL:
     ):
         query = select(Recipient)
 
+        print(tag_filter, mobile_code_filter)
         if tag_filter:
+            print("tag", tag_filter)
             query = query.filter(Recipient.tag == tag_filter)
         if mobile_code_filter:
+            print("mob", mobile_code_filter)
             query = query.filter(Recipient.mobile_code == mobile_code_filter)
 
         res = await self.session.execute(query)
 
         return res.scalars().all()
+
+    async def get_recipient_count(
+            self,
+            mailing_id: UUID
+    ):
+        result = await self.session.execute(
+            select(func.count(Recipient.recipient_id)).join(Message).where(Message.mailing_id == mailing_id)
+        )
+        user_count = result.scalar_one()
+        return user_count
 
 
     async def create(

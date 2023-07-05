@@ -16,35 +16,50 @@ services:
   web:
     build: .
     container_name: "web"
-    command: uvicorn main:app --reload --workers 1 --host 0.0.0.0 --port 8888
+    restart: on-failure
+    command: >
+      sh -c
+        "alembic upgrade heads && uvicorn main:app --reload --workers 1 --host 0.0.0.0 --port 8888"
     volumes:
       - .:/usr/src/
     ports:
       - "8888:8888"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/postgres
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@docker.host.internal:5432/postgres
       - TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTg3MjE2NzIsImlzcyI6ImZhYnJpcXVlIiwibmFtZSI6Imh0dHBzOi8vdC5tZS9wdXBzc3Nzc3NzIn0.1nj34EfEwLKj1s5jc5mA9nUpSjCj4NDvMbxs1IWx3CU
-      - APP_PORT=80
+      - APP_PORT=8000
     depends_on:
       - db
+    networks:
+      - custom
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     ports:
-      - "9000:9090"
+      - "9090:9090"
     volumes:
       - ./prometheus_data/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - custom
 
   grafana:
     image: grafana/grafana
     container_name: grafana
+    user: "472"
+    depends_on:
+      - prometheus
     ports:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    env_file:
+      - ./grafana_data/config.monitoring
+    networks:
+      - custom
 
 volumes:
   prometheus_data:
